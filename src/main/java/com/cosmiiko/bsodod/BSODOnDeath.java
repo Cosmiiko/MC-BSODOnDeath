@@ -2,11 +2,11 @@ package com.cosmiiko.bsodod;
 
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -21,6 +21,7 @@ import java.util.UUID;
 public class BSODOnDeath
 {
     private static final Logger LOGGER = LogManager.getLogger();
+    private boolean hasDied = false;
 
     public BSODOnDeath() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
@@ -42,36 +43,42 @@ public class BSODOnDeath
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    public void onLivingDeathEvent(LivingDeathEvent event)
+    public void onPlayerTick(TickEvent.PlayerTickEvent event)
     {
-        // Cancel if dead entity isn't a player
-        if (!(event.getEntityLiving() instanceof PlayerEntity)) return;
-        PlayerEntity ply = (PlayerEntity) event.getEntityLiving();
+        ClientPlayerEntity ply = Minecraft.getInstance().player;
 
-        // Cancel if it's not the local player
-        UUID localPlayerUID = Minecraft.getInstance().player.getUniqueID();
-        if (ply.getUniqueID() != localPlayerUID) return;
+        // Player hasn't loaded into the world yet
+        if (ply == null) return;
 
-        LOGGER.info("Player has died.");
+        // Player has respawned
+        if (ply.getHealth() > 0.0F && hasDied)
+            hasDied = false;
 
-        // Save the world if it's singleplayer
-        if (!ply.world.isRemote)
+        if (ply.getHealth() == 0.0F && !hasDied)
         {
-            LOGGER.info("Saving worlds...");
-            ply.world.getServer().save(false, false, true);
-            LOGGER.info("Done saving worlds. Prepare to get Rick Roll'd...");
-        }
+            hasDied = true;
 
-        try {
-            // Desktop doesn't work, throws a HeadlessException for some reason
-            // See https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java for this hack
+            LOGGER.info("Player has died.");
 
-            String url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-            Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + url);
-        }
-        catch (IOException e)
-        {
-            LOGGER.error("Error during Rick Roll attempt: ", e);
+            // Save the world if it's singleplayer
+            if (!ply.world.isRemote)
+            {
+                LOGGER.info("Saving worlds...");
+                ply.world.getServer().save(false, false, true);
+                LOGGER.info("Done saving worlds. Prepare to get Rick Roll'd...");
+            }
+
+            try {
+                // Desktop doesn't work, throws a HeadlessException for some reason
+                // See https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java for this hack
+
+                String url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+                Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + url);
+            }
+            catch (IOException e)
+            {
+                LOGGER.error("Error during Rick Roll attempt: ", e);
+            }
         }
 
         try {
