@@ -60,6 +60,8 @@ public class BSODOnDeath
 
             LOGGER.info("Player has died.");
 
+            ply.respawnPlayer();
+
             // Save the world if it's singleplayer
             if (!ply.world.isRemote)
             {
