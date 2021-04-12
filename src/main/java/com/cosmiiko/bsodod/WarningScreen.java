@@ -27,7 +27,7 @@ public class WarningScreen extends Screen {
         textLines = new ArrayList<>();
         textLines.add("This mod causes your computer to blue screen when you die.");
         textLines.add("Therefore, please save any and all unsaved work on your computer.");
-        textLines.add("If you are about to play singleplayer, please backup of your world first.");
+        textLines.add("If you are about to play singleplayer, please backup your world first.");
         textLines.add("By clicking 'I understand', you acknowledge the risks involved in");
         textLines.add("playing with such a mod.");
 
