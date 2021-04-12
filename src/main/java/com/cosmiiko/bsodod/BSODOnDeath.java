@@ -16,7 +16,6 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 
 @Mod("bsodod")
@@ -95,10 +94,17 @@ public class BSODOnDeath
     }
 
     private int tickCounter = 0;
+    private boolean firstTickPassed = false;
 
     @SubscribeEvent
     public void onClientTickEvent(TickEvent.ClientTickEvent event)
     {
+        if (!firstTickPassed)
+        {
+            Minecraft.getInstance().displayGuiScreen(new WarningScreen());
+            firstTickPassed = true;
+        }
+
         if (timerStarted)
         {
             if (tickCounter % 40 == 0)
