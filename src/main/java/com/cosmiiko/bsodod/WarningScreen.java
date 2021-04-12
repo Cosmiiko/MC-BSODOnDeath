@@ -31,6 +31,25 @@ public class WarningScreen extends Screen {
         textLines.add("By clicking 'I understand', you acknowledge the risks involved in");
         textLines.add("playing with such a mod.");
 
+        String latestVersion = UpdateChecker.GetLatestVersion();
+        String currentVersion = UpdateChecker.GetCurrentVersion();
+
+        if (latestVersion != null && currentVersion != null)
+        {
+            if (!latestVersion.equals(currentVersion))
+            {
+                textLines.add(TextFormatting.RED + "Your mod version is outdated (v" + currentVersion + ", latest is v" + latestVersion + ").");
+                textLines.add(TextFormatting.RED + "This version may contain bugs or accidental blue screens.");
+            }
+            else
+            {
+                textLines.add(TextFormatting.GREEN + "Your mod version is up-to-date.");
+            }
+        }
+        else
+        {
+            textLines.add(TextFormatting.GOLD + "Could not check for updates. Proceed with caution.");
+        }
 
         textVOffset = this.height/2 - (textLines.size()*LINESIZE + WARNINGSIZE)/2;
 
